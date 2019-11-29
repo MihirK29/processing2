@@ -4,31 +4,95 @@
  Date of last edit: November 18
  */
 
+float moveObjects;
 float moveBirdY;
-
 boolean darkMode;
-
 int currentScore, topScore;
-
 int screenType;
+int pillarX, currentPillarHeight;
+IntList whiteDotsX, whiteDotsY;
+int moveWhiteDotsX, lastWhiteDotsX;
+IntList starsX, starsY;
+int moveStarsX, lastStarsX;
+int moveGreenTrackX;
 
-int pillerX;
+float goldCoinX, goldCoinY;
+
+FloatList darkBubblesX, darkBubblesSize, lightBubblesX, lightBubblesSize, buildingsX, buildingsSize, greenBubblesX, greenBubblesY, greenBubblesSize;
+float darkBubbleX, lightBubbleX, greenBubbleX, buildingX;
+int endingTextSize;
+
 void settings() {
   size(950, 650);
 }
 
 void setup() { 
-  pillerX=0;
+  goldCoinX=random(width+150, width+350);
+  goldCoinY=random(200,400);
+  endingTextSize=10;
+  println("Welcome to Flappy Bird");
+  println("Instructions:");
+  println("  Select Easy or Hard");
+  println("  Click on the circles to change time of day");
+  println("  Press p to pause and resume");
+  println("  Press e to quit");
+  
+  moveGreenTrackX=0;
+  currentPillarHeight= (int) random(10, 400);
+  pillarX=0;
+  lastWhiteDotsX=width-60;
+  whiteDotsX=new IntList();
+  whiteDotsY=new IntList();
+  lastStarsX=width-10;
+  starsX=new IntList();
+  starsY=new IntList();
   background(76, 188, 252);
-  screenType=1;
+  screenType=0;
   textAlign(CENTER);
   moveBirdY=0;
   darkMode=false;
   currentScore=0;
 
+  darkBubblesX = new FloatList();
+  darkBubblesSize = new FloatList();
+  darkBubbleX=random(-15, 0);
+
+  lightBubblesX = new FloatList();
+  lightBubblesSize = new FloatList();
+  lightBubbleX=random(-15, -10);
+
+  buildingsX = new FloatList();
+  buildingsSize = new FloatList();
+  buildingX=random(-15, -10);
+
+  greenBubblesX = new FloatList();
+  greenBubblesY = new FloatList();
+  greenBubblesSize = new FloatList();
+  greenBubbleX=random(-20, -5);
+
+  //Adds the size and x location of the bubbles to the lists
+  for (int i = 0; i<300; i++) {
+    darkBubblesX.append(darkBubbleX);
+    darkBubblesSize.append(random(72, 110));
+    darkBubbleX+=random(45, 55);
+
+    lightBubblesX.append(lightBubbleX);
+    lightBubblesSize.append(random(69, 90));
+    lightBubbleX+=random(40, 50);
+
+    buildingsX.append(buildingX);
+    buildingsSize.append(random(-100, -75));
+    buildingX+=random(40, 80);
+
+    greenBubblesX.append(greenBubbleX);
+    greenBubblesY.append(random(593, 610));
+    greenBubblesSize.append(random(40, 50));
+    greenBubbleX+=random(-15, 25);
+  }
 }
 
 void draw() {
+  checkDeath();
   if (screenType == 0) {
     startScreen();
   }
@@ -36,27 +100,70 @@ void draw() {
   if (screenType == 1) {
     gameScreen();
   }
+  if (screenType==2){
+    winScreen();
+  }
+
+  if (key=='x') {
+    fill(255);
+    ellipse (mouseX, mouseY, 2, 2);
+    text("x: "+ mouseX+ "     y: "+ mouseY, mouseX, mouseY);
+  }
 }
 
+void checkDeath() {
+  if(moveBirdY+317.5>604 || width+55-pillarX>=217 && width-5-pillarX<=176 && moveBirdY+191>currentPillarHeight+160 ||width+55-pillarX>=217 && width-5-pillarX<=176 && moveBirdY+317.5<currentPillarHeight+30 ){
+    println("death");
+    setup();
+  }
+}
+color findCircleColour(float XPos, float YPos){
+  float distance = dist(XPos + 50, YPos + 50, mouseX, mouseY);
+  if(distance<=250){
+     return color(218,13,21); 
+  } 
+  else{
+    return color(11, 175, 17);
+}
+}
+void winScreen(){
+  background(0);
+  
+  //Resets variables
+  float smallCirclesY=24;
+  float smallCirclesX=20;
+
+  stroke(0);
+  strokeWeight(0.7);
+  while(smallCirclesX<width){ //Creates each circle column
+    while(smallCirclesY<height){ //Creates each circle in column
+      fill(findCircleColour(smallCirclesX, smallCirclesY));
+      ellipse(smallCirclesX,smallCirclesY,40,40);
+      smallCirclesY+=40;
+  }
+    smallCirclesX+=40;
+    smallCirclesY=24;
+}
+
+  fill(255);
+  textAlign(CENTER);
+  textSize(endingTextSize);
+  endingTextSize+=5;
+  if(endingTextSize>=140){
+    endingTextSize=140;
+  }
+  text("You Win!", width/2, height/1.8);
+}
 
 void gameScreen() {
-  dropBird();
-  
-  //Creates the background
-  for (int i=0; i<height; i+=1) {
-    if (darkMode==true) {
-      stroke(61-i/15, 80, i/5+90);
-    } else {
-      stroke(76, 188, 252);
-    }
-    line(0, i, width, i);
-  }
 
-  if (darkMode==true) {
-    createWhiteDots();
-    createStars();
-  }
-  
+  dropBird();
+
+  createBackground();
+
+  createBackgroundObjects();
+
+
   //Flappy Bird
   stroke(0);
   strokeWeight(1.7);
@@ -75,8 +182,8 @@ void gameScreen() {
   strokeWeight(5.8);
   point(214, 292.5+moveBirdY); //Black eye pupil
 
-  createPiller();
-
+  createGoldCoin();
+  createPillar();
   //The pale ground
   noStroke();
   fill(230, 180, 120);
@@ -85,75 +192,183 @@ void gameScreen() {
   //The green track
   createGreenTrack();
 
-  //Gold Point
-  fill(220, 185, 9);
-  ellipse(200, 200, 25, 25);
-  fill(250);
-  textSize(20);
-  text(5, 200, 206);
+ 
 
   //Current Score
   textSize(50);
   fill(250);
-  text(5, width/2, 75);
-  
+  text(currentScore, width/2, 75);
 }
 
-int currentPillerHeight= (int) random(10,400);
-void createPiller(){
-  //Light green part of pillers
+void createBackgroundObjects() {
+  for (int i = 0; i<300; i++) {
+    noStroke();
+    fill(81, 129, 175);
+    ellipse(darkBubblesX.get(i), 500, darkBubblesSize.get(i), darkBubblesSize.get(i));
+  }
+  for (int i = 0; i<300; i++) {
+    fill(109, 159, 204);
+    ellipse(lightBubblesX.get(i), 555, lightBubblesSize.get(i), lightBubblesSize.get(i));
+  }
+  for (int i = 0; i<300; i++) {
+    if (i%4 == 0){
+      fill(187, 136, 60);
+    }
+    else if (i%3 == 0){
+      fill(14, 18, 95);
+    }
+    else{
+      fill(22, 168, 24);
+    }
+    rect(buildingsX.get(i), 600, -1*buildingsSize.get(i)/2, buildingsSize.get(i));
+  }    
+  
+  for (int i = 0; i<300; i++) {
+    stroke(25, 170, 60);
+    strokeWeight(2);
+    fill(39, 129, 66);
+    ellipse(greenBubblesX.get(i), greenBubblesY.get(i), greenBubblesSize.get(i), greenBubblesSize.get(i));
+  }
+}
+void createBackground() {
+  //Creates the background
+  for (int i=0; i<height; i+=1) {
+    if (darkMode==true) {
+      stroke(61-i/15, 80, i/5+90);
+    } else {
+      stroke(76, 188, 252);
+    }
+    line(0, i, width, i);
+  }
+
+  if (darkMode==true) {
+    createWhiteDots();
+    createStars();
+  }
+}
+
+void checkGoldCoinCollision(float x, float y){
+  if(dist(x, y, 205, moveBirdY+300) < 30){
+    currentScore+=1;
+    goldCoinX=-50;
+  }
+}
+void createGoldCoin(){
+  goldCoinX-=moveObjects;
+  //Gold Point
+  strokeWeight(1);
+  fill(220, 185, 9);
+  ellipse(goldCoinX, goldCoinY, 25, 25);
+  fill(250);
+  textSize(20);
+  text(1, goldCoinX, goldCoinY+6);
+  checkGoldCoinCollision(goldCoinX, goldCoinY);
+  
+  if(goldCoinX<0){
+    goldCoinX=random(width+50, width+300);
+    goldCoinY=random(150, 400);
+  }
+}
+
+void createPillar() {
+  //Light green part of pillars
   strokeWeight(5);
-  fill(50,207,13);
-  rect(305-pillerX,currentPillerHeight,80,-100000);
-  rect(305-pillerX,currentPillerHeight+190,80,100000);
+  fill(50, 207, 13);
+  rect(width+5-pillarX, currentPillarHeight, 80, -100000);
+  rect(width+5-pillarX, currentPillarHeight+190, 80, 100000);
+
+  //Dark green part of pillars
+  fill(38, 150, 10);
+  rect(width-5-pillarX, currentPillarHeight, 100, 30);
+  rect(width-5-pillarX, currentPillarHeight+190, 100, -30);
+
+  pillarX+=moveObjects;
+
+  if(width+95-pillarX==105){
+    currentScore+=1;
+    if(currentScore>topScore){
+      topScore=currentScore;
+    }
+    if (currentScore>=5){
+      screenType=2;
+    }
+  }
   
-  //Dark green part of pillers
-  fill(38,150,10);
-  rect(295-pillerX,currentPillerHeight,100,30);
-  rect(295-pillerX,currentPillerHeight+190,100,-30);
-  
-  pillerX+=3;
+  if(width+95-pillarX<0){
+    currentPillarHeight= (int) random(10, 400);
+    pillarX=0;
+  }
 }
 
-void dropBird(){
+void dropBird() {
   moveBirdY+=9;
 }
+boolean pauseCounter;
 void keyPressed() {
   if (key==' ' || keyCode==UP) {
     moveBirdY-=90;
   }
-}
-void createWhiteDots() {
-  for (int i=0; i<19; i+=1) {
-    fill(255);
-    ellipse(random(width), random(-10, 400), 3, 3);
+  if (key=='p' || key=='P') {
+    if (pauseCounter) {
+      noLoop();
+    } 
+    else {
+      loop();
+    }
+    pauseCounter=!pauseCounter;
+  }
+
+  if (key=='e' || key=='E'){
+    exit();
   }
 }
 
+void mousePressed() {
+  if (mouseButton == LEFT) {
+    moveBirdY-=90;
+  }
+}
+
+
+void createWhiteDots() {
+  lastWhiteDotsX+=(int) random(100, 110);
+  whiteDotsX.append(lastWhiteDotsX);
+  whiteDotsY.append((int) random(-30, 350));
+  for (int i=0; i<whiteDotsX.size(); i+=1) {
+    fill(255);
+    ellipse(whiteDotsX.get(i)+moveWhiteDotsX, whiteDotsY.get(i), 4, 4);
+  }
+  moveWhiteDotsX-=moveObjects/2;
+}
+
+
 void createStars() {
-  for (int i=0; i<15; i+=1) {
+  lastStarsX+=(int) random(180, 210);
+  starsX.append(lastStarsX);
+  starsY.append((int) random(-45, 260));
+  for (int i=0; i<starsX.size(); i+=1) {
     noStroke();
     if (i%3==0) {
       fill(70, 100, 160);
     } else {
       fill(255, 246, 0);
     }
-    rect(random(width), random(10, 300), 0, 0, -6);
+    rect(starsX.get(i)+moveStarsX, starsY.get(i), 0, 0, -6);
   }
+  moveStarsX-=moveObjects/2;
 }
-int x;
 void createGreenTrack() {
   for (int i=0; i<90000; i+=40) {
     strokeWeight(2);
     stroke(10);
     fill(118, 190, 51);
-    rect(i-x+1, height-47, 40, 10, 3);
+    rect(i-moveGreenTrackX+1, height-47, 40, 10, 3);
 
     noStroke();
     fill(152, 218, 91);
-    rect(i-x+3, height-44.5, 15, 6.5, 1);
+    rect(i-moveGreenTrackX+3, height-44.5, 15, 6.5, 1);
   }
-  x+=1;
+  moveGreenTrackX+=moveObjects;
 }
 
 void startScreen() {
@@ -173,29 +388,29 @@ void startScreen() {
   //Current Score and Top Score Text
   text("Current Score", 490, 285);
   text("Top Score", 472, 331);
+  
+  
 
   //Displays Current Score and Top Score Numbers
   fill(255);
   text(currentScore, 330, 285);
   text(topScore, 330, 331);
-  
-  
+
   //The light and dark mode symbols
   noStroke();
-  fill(255,255,0);
-  ellipse(295,190,40,40); //Light symbol
-  fill(0,20,0);
-  ellipse(665,190,40,40); //Dark symbol
-
+  fill(255, 255, 0);
+  ellipse(295, 190, 40, 40); //Light symbol
+  fill(0, 20, 0);
+  ellipse(665, 190, 40, 40); //Dark symbol
 
   //Uses mouse X and Y values to check if it is within the light symbol
-  if (mousePressed && dist(295,190, mouseX, mouseY) < 20) {
+  if (mousePressed && dist(295, 190, mouseX, mouseY) < 20) {
     darkMode=false;
     print("hi");
   }
-  
+
   //Uses mouse X and Y values to check if it is within the dark symbol
-  if (mousePressed && dist(665,190, mouseX, mouseY) < 20) {
+  if (mousePressed && dist(665, 190, mouseX, mouseY) < 20) {
     darkMode=true;
   }
 
@@ -226,16 +441,18 @@ void startScreen() {
 
   if (mousePressed) {
     if (mouseX<405 && mouseX>275 && mouseY<430 && mouseY>380) { //If the user selects the play option
-      setup();
+      moveObjects=10;
+      screenType=1;
     } else if (mouseX<675 && mouseX>545 && mouseY<430 && mouseY>380) { //If the user selects the quit option
-      exit(); //Exits program
-    }
+      moveObjects=20;
+      screenType=1;  
+  }
   }
 
   //Writes the text for the options of playing or quitting
   textAlign(CENTER);
   fill(0, 102, 153);
   textSize(25);
-  text("Play", 340, 413);
-  text("Quit", 610, 413);
+  text("Easy", 340, 413);
+  text("Hard", 610, 413);
 }

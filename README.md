@@ -15,77 +15,84 @@ int moveWhiteDotsX, lastWhiteDotsX;
 IntList starsX, starsY;
 int moveStarsX, lastStarsX;
 int moveGreenTrackX;
-
 float goldCoinX, goldCoinY;
-
 FloatList darkBubblesX, darkBubblesSize, lightBubblesX, lightBubblesSize, buildingsX, buildingsSize, greenBubblesX, greenBubblesY, greenBubblesSize;
 float darkBubbleX, lightBubbleX, greenBubbleX, buildingX;
 int endingTextSize;
 float gravity, velocity;
+float distance;
+float smallCirclesX, smallCirclesY;
+boolean pauseCounter;
+
 void settings() {
   size(950, 650);
 }
 
 void setup() { 
-  gravity=1.3;
-  velocity=0;
-  goldCoinX=random(width+150, width+350);
-  goldCoinY=random(200,400);
-  endingTextSize=10;
+  background(76, 188, 252);
+  textAlign(CENTER);
+
+  //Prints introduction text
   println("Welcome to Flappy Bird");
   println("Instructions:");
   println("  Select Easy or Hard");
   println("  Click on the circles to change time of day");
   println("  Press p to pause and resume");
   println("  Press e to quit");
-  
+
+  //Defines variables
+  gravity=1.3;
+  velocity=0;
+  goldCoinX=random(width+150, width+350);
+  goldCoinY=random(200, 400);
+  endingTextSize=10;
   moveGreenTrackX=0;
   currentPillarHeight= (int) random(10, 400);
   pillarX=0;
   lastWhiteDotsX=width-60;
-  whiteDotsX=new IntList();
-  whiteDotsY=new IntList();
   lastStarsX=width-10;
-  starsX=new IntList();
-  starsY=new IntList();
-  background(76, 188, 252);
   screenType=0;
-  textAlign(CENTER);
   moveBirdY=0;
   darkMode=false;
   currentScore=0;
 
+  //Initiates lists
+  whiteDotsX=new IntList();
+  whiteDotsY=new IntList();
+  starsX=new IntList();
+  starsY=new IntList();
   darkBubblesX = new FloatList();
   darkBubblesSize = new FloatList();
   darkBubbleX=random(-15, 0);
-
   lightBubblesX = new FloatList();
   lightBubblesSize = new FloatList();
   lightBubbleX=random(-15, -10);
-
   buildingsX = new FloatList();
   buildingsSize = new FloatList();
   buildingX=random(-15, -10);
-
   greenBubblesX = new FloatList();
   greenBubblesY = new FloatList();
   greenBubblesSize = new FloatList();
   greenBubbleX=random(-20, -5);
 
-  //Adds the size and x location of the bubbles to the lists
+  //Adds the size and x location of the bubbles and buildings to the lists
   for (int i = 0; i<300; i++) {
+    //Appends dark bubble values
     darkBubblesX.append(darkBubbleX);
     darkBubblesSize.append(random(72, 110));
     darkBubbleX+=random(45, 55);
 
+    //Appends light bubble values
     lightBubblesX.append(lightBubbleX);
     lightBubblesSize.append(random(69, 90));
     lightBubbleX+=random(40, 50);
 
+    //Appends building values
     buildingsX.append(buildingX);
     buildingsSize.append(random(-100, -75));
     buildingX+=random(40, 80);
 
+    //Appends green bubble values
     greenBubblesX.append(greenBubbleX);
     greenBubblesY.append(random(593, 610));
     greenBubblesSize.append(random(40, 50));
@@ -97,83 +104,68 @@ void draw() {
   if (screenType == 0) {
     startScreen();
   }
-
   if (screenType == 1) {
     gameScreen();
   }
-  if (screenType==2){
+  if (screenType==2) {
     winScreen();
   }
   checkDeath();
-
-
+  
   if (key=='x') {
     fill(255);
     ellipse (mouseX, mouseY, 2, 2);
     text("x: "+ mouseX+ "     y: "+ mouseY, mouseX, mouseY);
   }
-}
-
-
-color findCircleColour(float XPos, float YPos){
-  float distance = dist(XPos + 50, YPos + 50, mouseX, mouseY);
-  if(distance<=250){
-     return color(218,13,21); 
-  } 
-  else{
-    return color(11, 175, 17);
-}
-}
-void winScreen(){
-  background(0);
   
-  //Resets variables
-  float smallCirclesY=24;
-  float smallCirclesX=20;
+}
 
+color findCircleColour(float XPos, float YPos) {
+  //Returns colour based on position of circle to mouse
+  distance = dist(XPos + 50, YPos + 50, mouseX, mouseY);
+  if (distance<=250) {
+    return color(218, 13, 21);
+  } else {
+    return color(11, 175, 17);
+  }
+}
+
+void winScreen() {
+  //Resets small circle variables
+  smallCirclesY=24;
+  smallCirclesX=20;
+
+  background(0);
   stroke(0);
   strokeWeight(0.7);
-  while(smallCirclesX<width){ //Creates each circle column
-    while(smallCirclesY<height){ //Creates each circle in column
+  while (smallCirclesX<width) { //Creates each circle column
+    while (smallCirclesY<height) { //Creates each circle in column
       fill(findCircleColour(smallCirclesX, smallCirclesY));
-      ellipse(smallCirclesX,smallCirclesY,40,40);
+      ellipse(smallCirclesX, smallCirclesY, 40, 40);
       smallCirclesY+=40;
-  }
+    }
     smallCirclesX+=40;
     smallCirclesY=24;
-}
+  }
 
+  //Creates winning text and enlarges it at constant rate
   fill(255);
   textAlign(CENTER);
   textSize(endingTextSize);
   endingTextSize+=5;
-  if(endingTextSize>=140){
+  if (endingTextSize>=140) {
     endingTextSize=140;
   }
   text("You Win!", width/2, height/1.8);
 }
 
 void gameScreen() {
-
-
   createBackground();
-
   createBackgroundObjects();
-
-
   moveBird();
-
   createGoldCoin();
   createPillar();
-  //The pale ground
-  noStroke();
-  fill(230, 180, 120);
-  rect(0, height, 950, -45);
-
-  //The green track
-  createGreenTrack();
-
- 
+  createGround();
 
   //Current Score
   textSize(50);
@@ -181,10 +173,10 @@ void gameScreen() {
   text(currentScore, width/2, 75);
 }
 
-void moveBird(){
+void moveBird() {
   velocity += gravity;
   moveBirdY += velocity;
-  //Flappy Bird
+  //Creates the flappy Bird
   stroke(0);
   strokeWeight(1.7);
   fill(240, 190, 83);
@@ -204,28 +196,33 @@ void moveBird(){
 }
 
 void createBackgroundObjects() {
+  //Creates dark bubbles from the lists defined in setup()
   for (int i = 0; i<300; i++) {
     noStroke();
     fill(81, 129, 175);
     ellipse(darkBubblesX.get(i), 500, darkBubblesSize.get(i), darkBubblesSize.get(i));
   }
+
+  //Creates light bubbles from the lists defined in setup()
   for (int i = 0; i<300; i++) {
     fill(109, 159, 204);
     ellipse(lightBubblesX.get(i), 555, lightBubblesSize.get(i), lightBubblesSize.get(i));
   }
+
+  //Creates buildings from the lists defined in setup()
   for (int i = 0; i<300; i++) {
-    if (i%4 == 0){
+    //Chooses different colours for building based on i values
+    if (i%4 == 0) {
       fill(187, 136, 60);
-    }
-    else if (i%3 == 0){
+    } else if (i%3 == 0) {
       fill(14, 18, 95);
-    }
-    else{
+    } else {
       fill(22, 168, 24);
     }
     rect(buildingsX.get(i), 600, -1*buildingsSize.get(i)/2, buildingsSize.get(i));
   }    
-  
+
+  //Creates green bubbles from the lists defined in setup()
   for (int i = 0; i<300; i++) {
     stroke(25, 170, 60);
     strokeWeight(2);
@@ -233,32 +230,34 @@ void createBackgroundObjects() {
     ellipse(greenBubblesX.get(i), greenBubblesY.get(i), greenBubblesSize.get(i), greenBubblesSize.get(i));
   }
 }
+
 void createBackground() {
   //Creates the background
   for (int i=0; i<height; i+=1) {
+    //Uses darkMode boolean to decide weather to create a dark or light background
     if (darkMode==true) {
       stroke(61-i/15, 80, i/5+90);
+      createWhiteDots();
+      createStars();
     } else {
       stroke(76, 188, 252);
     }
     line(0, i, width, i);
   }
-
-  if (darkMode==true) {
-    createWhiteDots();
-    createStars();
-  }
 }
 
-void checkGoldCoinCollision(float x, float y){
-  if(dist(x, y, 205, moveBirdY+300) < 30){
+void checkGoldCoinCollision(float x, float y) {
+  //Adds point and resets gold coin x if bird hits the coin
+  if (dist(x, y, 205, moveBirdY+300) < 30) {
     currentScore+=1;
-    goldCoinX=-50;
+    goldCoinX=random(-70, -50);
+    ;
   }
 }
-void createGoldCoin(){
+
+void createGoldCoin() {
   goldCoinX-=moveObjects;
-  //Gold Point
+  //Creates gold point
   strokeWeight(1);
   fill(220, 185, 9);
   ellipse(goldCoinX, goldCoinY, 25, 25);
@@ -266,76 +265,82 @@ void createGoldCoin(){
   textSize(20);
   text(1, goldCoinX, goldCoinY+6);
   checkGoldCoinCollision(goldCoinX, goldCoinY);
-  
-  if(goldCoinX<0){
+
+  //Resets x and y of gold coin if it goes of screen
+  if (goldCoinX<0) {
     goldCoinX=random(width+50, width+300);
     goldCoinY=random(150, 400);
   }
 }
 
 void checkDeath() {
-  if((moveBirdY+320)>(currentPillarHeight+160) || (moveBirdY+285)<(currentPillarHeight+30)){
-    if((width+95-pillarX)>=176 && (width-5-pillarX)<=227){
+  //Resets program if bird has hit the top or bottom piller
+  if ((moveBirdY+320)>(currentPillarHeight+160) || (moveBirdY+285)<(currentPillarHeight+30)) {
+    if ((width+95-pillarX)>=176 && (width-5-pillarX)<=227) {
       println("death");
       setup();
-  
-  }
+    }
   }
 }
 
 void createPillar() {
-  //Light green part of pillars
+  //Creates the light green part of pillars
   strokeWeight(5);
   fill(50, 207, 13);
   rect(width+5-pillarX, currentPillarHeight, 80, -100000);
   rect(width+5-pillarX, currentPillarHeight+190, 80, 100000);
 
-  //Dark green part of pillars
+  //Creates the dark green part of pillars
   fill(38, 150, 10);
   rect(width-5-pillarX, currentPillarHeight, 100, 30);
   rect(width-5-pillarX, currentPillarHeight+190, 100, -30);
-
   pillarX+=moveObjects;
 
-  if(width+95-pillarX==105){
+  //Adds a point to current score if the bird passes the piller
+  if (width+95-pillarX==105) {
     currentScore+=1;
-    if(currentScore>topScore){
+    //Updates the top score
+    if (currentScore>topScore) {
       topScore=currentScore;
     }
-    if (currentScore>=5){
+    //Activates the win screen
+    if (currentScore>=5) {
       screenType=2;
     }
   }
-  
-  if(width+95-pillarX<0){
+
+  //Creates new pillar
+  if (width+95-pillarX<0) {
     currentPillarHeight= (int) random(10, 400);
     pillarX=0;
   }
 }
 
 
-boolean pauseCounter;
 void keyPressed() {
+  //Makes bird jump
   if (key==' ' || keyCode==UP) {
     velocity=-20;
   }
-  
+
+  //Pauses and resumes program
   if (key=='p' || key=='P') {
     if (pauseCounter) {
       noLoop();
-    } 
-    else {
+    } else {
       loop();
     }
     pauseCounter=!pauseCounter;
   }
 
-  if (key=='e' || key=='E'){
+  //Closes program
+  if (key=='e' || key=='E') {
     exit();
   }
 }
 
 void mousePressed() {
+  //Makes bird jump
   if (mouseButton == LEFT) {
     velocity=-20;
   }
@@ -343,9 +348,12 @@ void mousePressed() {
 
 
 void createWhiteDots() {
+  //Creates new white dot
   lastWhiteDotsX+=(int) random(100, 110);
   whiteDotsX.append(lastWhiteDotsX);
   whiteDotsY.append((int) random(-30, 350));
+
+  //Accesses white dots lists to create dots
   for (int i=0; i<whiteDotsX.size(); i+=1) {
     fill(255);
     ellipse(whiteDotsX.get(i)+moveWhiteDotsX, whiteDotsY.get(i), 4, 4);
@@ -353,13 +361,16 @@ void createWhiteDots() {
   moveWhiteDotsX-=moveObjects/2;
 }
 
-
 void createStars() {
+  //Creates new star
   lastStarsX+=(int) random(180, 210);
   starsX.append(lastStarsX);
   starsY.append((int) random(-45, 260));
+
+  //Accesses stars lists to create stars
   for (int i=0; i<starsX.size(); i+=1) {
     noStroke();
+    //Chooses colour for star depending on i value
     if (i%3==0) {
       fill(70, 100, 160);
     } else {
@@ -369,13 +380,19 @@ void createStars() {
   }
   moveStarsX-=moveObjects/2;
 }
-void createGreenTrack() {
+
+void createGround() {
+  //Creates the pale ground
+  noStroke();
+  fill(230, 180, 120);
+  rect(0, height, 950, -45);
+
+  //Creates the green track
   for (int i=0; i<90000; i+=40) {
     strokeWeight(2);
     stroke(10);
     fill(118, 190, 51);
     rect(i-moveGreenTrackX+1, height-47, 40, 10, 3);
-
     noStroke();
     fill(152, 218, 91);
     rect(i-moveGreenTrackX+3, height-44.5, 15, 6.5, 1);
@@ -384,31 +401,28 @@ void createGreenTrack() {
 }
 
 void startScreen() {
-  //Information box
+  //Creates information box
   stroke(0);
   strokeWeight(6);
   fill(220, 213, 135);
   rect(275, 250, 400, 100);
 
-  //Start Game text
+  //Creates Start Game text
   textSize(55);
   fill(251, 150, 72);
   text("Start Game", 480, 207);
 
+  //Displays Current Score and Top Score texts
   textSize(27);
-
-  //Current Score and Top Score Text
   text("Current Score", 490, 285);
   text("Top Score", 472, 331);
-  
-  
 
-  //Displays Current Score and Top Score Numbers
+  //Displays Current Score and Top Score numbers
   fill(255);
   text(currentScore, 330, 285);
   text(topScore, 330, 331);
 
-  //The light and dark mode symbols
+  //Creates the light and dark mode symbols
   noStroke();
   fill(255, 255, 0);
   ellipse(295, 190, 40, 40); //Light symbol
@@ -425,8 +439,6 @@ void startScreen() {
   if (mousePressed && dist(665, 190, mouseX, mouseY) < 20) {
     darkMode=true;
   }
-
-
 
   //Highlights (by changing the colour) the option which the user is hovering over
   if (mouseX<405 && mouseX>275 && mouseY<430 && mouseY>380) {
@@ -457,8 +469,8 @@ void startScreen() {
       screenType=1;
     } else if (mouseX<675 && mouseX>545 && mouseY<430 && mouseY>380) { //If the user selects the quit option
       moveObjects=20;
-      screenType=1;  
-  }
+      screenType=1;
+    }
   }
 
   //Writes the text for the options of playing or quitting

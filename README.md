@@ -21,12 +21,14 @@ float goldCoinX, goldCoinY;
 FloatList darkBubblesX, darkBubblesSize, lightBubblesX, lightBubblesSize, buildingsX, buildingsSize, greenBubblesX, greenBubblesY, greenBubblesSize;
 float darkBubbleX, lightBubbleX, greenBubbleX, buildingX;
 int endingTextSize;
-
+float gravity, velocity;
 void settings() {
   size(950, 650);
 }
 
 void setup() { 
+  gravity=1.3;
+  velocity=0;
   goldCoinX=random(width+150, width+350);
   goldCoinY=random(200,400);
   endingTextSize=10;
@@ -92,7 +94,6 @@ void setup() {
 }
 
 void draw() {
-  checkDeath();
   if (screenType == 0) {
     startScreen();
   }
@@ -103,6 +104,8 @@ void draw() {
   if (screenType==2){
     winScreen();
   }
+  checkDeath();
+
 
   if (key=='x') {
     fill(255);
@@ -111,12 +114,7 @@ void draw() {
   }
 }
 
-void checkDeath() {
-  if(moveBirdY+317.5>604 || width+55-pillarX>=217 && width-5-pillarX<=176 && moveBirdY+191>currentPillarHeight+160 ||width+55-pillarX>=217 && width-5-pillarX<=176 && moveBirdY+317.5<currentPillarHeight+30 ){
-    println("death");
-    setup();
-  }
-}
+
 color findCircleColour(float XPos, float YPos){
   float distance = dist(XPos + 50, YPos + 50, mouseX, mouseY);
   if(distance<=250){
@@ -157,30 +155,13 @@ void winScreen(){
 
 void gameScreen() {
 
-  dropBird();
 
   createBackground();
 
   createBackgroundObjects();
 
 
-  //Flappy Bird
-  stroke(0);
-  strokeWeight(1.7);
-  fill(240, 190, 83);
-  ellipse(200, 300+moveBirdY, 43, 35); //Yellow body
-  fill(245);
-  ellipse(210, 292.5+moveBirdY, 20, 19); //White eye
-  fill(230);
-  rect(175, 298+moveBirdY, 18, 10, 8); //White wing
-  fill(253, 104, 74);
-  rect(207, 300+moveBirdY, 20, 6, 100); //Upper lip
-  rect(207, 306+moveBirdY, 17, 6, 100); //Lower lip
-  triangle(207, 301+moveBirdY, 202, 306+moveBirdY, 207, 311+moveBirdY); //Side of lip
-  strokeWeight(0);
-  triangle(209, 303.5+moveBirdY, 203, 306+moveBirdY, 209, 310+moveBirdY); //Covers the join between the upper, lower and side lip
-  strokeWeight(5.8);
-  point(214, 292.5+moveBirdY); //Black eye pupil
+  moveBird();
 
   createGoldCoin();
   createPillar();
@@ -198,6 +179,28 @@ void gameScreen() {
   textSize(50);
   fill(250);
   text(currentScore, width/2, 75);
+}
+
+void moveBird(){
+  velocity += gravity;
+  moveBirdY += velocity;
+  //Flappy Bird
+  stroke(0);
+  strokeWeight(1.7);
+  fill(240, 190, 83);
+  ellipse(200, 300+moveBirdY, 43, 35); //Yellow body
+  fill(245);
+  ellipse(210, 292.5+moveBirdY, 20, 19); //White eye
+  fill(230);
+  rect(175, 298+moveBirdY, 18, 10, 8); //White wing
+  fill(253, 104, 74);
+  rect(207, 300+moveBirdY, 20, 6, 100); //Upper lip
+  rect(207, 306+moveBirdY, 17, 6, 100); //Lower lip
+  triangle(207, 301+moveBirdY, 202, 306+moveBirdY, 207, 311+moveBirdY); //Side of lip
+  strokeWeight(0);
+  triangle(209, 303.5+moveBirdY, 203, 306+moveBirdY, 209, 310+moveBirdY); //Covers the join between the upper, lower and side lip
+  strokeWeight(5.8);
+  point(214, 292.5+moveBirdY); //Black eye pupil
 }
 
 void createBackgroundObjects() {
@@ -270,6 +273,16 @@ void createGoldCoin(){
   }
 }
 
+void checkDeath() {
+  if((moveBirdY+320)>(currentPillarHeight+160) || (moveBirdY+285)<(currentPillarHeight+30)){
+    if((width+95-pillarX)>=176 && (width-5-pillarX)<=227){
+      println("death");
+      setup();
+  
+  }
+  }
+}
+
 void createPillar() {
   //Light green part of pillars
   strokeWeight(5);
@@ -300,14 +313,13 @@ void createPillar() {
   }
 }
 
-void dropBird() {
-  moveBirdY+=9;
-}
+
 boolean pauseCounter;
 void keyPressed() {
   if (key==' ' || keyCode==UP) {
-    moveBirdY-=90;
+    velocity=-20;
   }
+  
   if (key=='p' || key=='P') {
     if (pauseCounter) {
       noLoop();
@@ -325,7 +337,7 @@ void keyPressed() {
 
 void mousePressed() {
   if (mouseButton == LEFT) {
-    moveBirdY-=90;
+    velocity=-20;
   }
 }
 

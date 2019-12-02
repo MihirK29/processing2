@@ -237,13 +237,15 @@ void createBackground() {
     //Uses darkMode boolean to decide weather to create a dark or light background
     if (darkMode==true) {
       stroke(61-i/15, 80, i/5+90);
-      createWhiteDots();
-      createStars();
     } else {
       stroke(76, 188, 252);
     }
     line(0, i, width, i);
   }
+  if(darkMode==true){
+      createWhiteDots();
+      createStars();
+    }
 }
 
 void checkGoldCoinCollision(float x, float y) {
